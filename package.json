@@ -2,7 +2,7 @@
   "name": "truthseek",
   "displayName": "TruthSeek Eval Harness",
   "description": "Run TruthSeek evals from the editor: one-click runs, a live gate badge in the status bar, pass/fail case tree, and a scorecard panel with the separability plane.",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "publisher": "UnifyDynamics",
   "license": "MIT",
   "engines": { "vscode": "^1.85.0" },
@@ -26,6 +26,7 @@
       { "command": "truthseek.runCategory", "title": "TruthSeek: Run one category…" },
       { "command": "truthseek.runStrict", "title": "TruthSeek: Run strict gate (CI check)" },
       { "command": "truthseek.selectTarget", "title": "TruthSeek: Configure target model…" },
+      { "command": "truthseek.compareModels", "title": "TruthSeek: Compare two models…" },
       { "command": "truthseek.openScorecard", "title": "TruthSeek: Open scorecard panel" },
       { "command": "truthseek.newCase", "title": "TruthSeek: New eval case file" },
       { "command": "truthseek.refresh", "title": "TruthSeek: Refresh", "icon": "$(refresh)" }

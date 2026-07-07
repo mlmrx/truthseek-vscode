@@ -134,6 +134,7 @@ Requires a VS Code–compatible engine version ≥ 1.85 (or the equivalent in yo
 | `TruthSeek: Run one category…` | Prompts for a single category (engagement, calibration, anti-sycophancy, guardrails, agentic, …) and runs just that |
 | `TruthSeek: Run strict gate (CI check)` | Same as a config run, but exits non-zero on a threshold miss or guardrail regression — wire this into CI |
 | `TruthSeek: Configure target model…` | Picks a preset (Ollama / LM Studio / vLLM / custom), auto-discovers loaded models, and writes `config.yaml` for you |
+| `TruthSeek: Compare two models…` | Runs the same cases against two or more models and writes a side-by-side `comparison.html` with a guardrail-gated verdict — which model is least neutered *without* becoming reckless |
 | `TruthSeek: Open scorecard panel` | Opens the webview panel with the separability plane and failed-case list |
 | `TruthSeek: New eval case file` | Scaffolds a new case in a fresh YAML buffer |
 | `TruthSeek: Refresh` | Re-reads `out/scorecard.json` and refreshes the badge, tree, and panel |

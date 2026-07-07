@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.0
+- New command *TruthSeek: Compare two models…* — pick two or more models (auto-discovered
+  from the endpoint in `config.yaml`) and run the same case suite against each. Produces a
+  side-by-side comparison (`out/comparison.html` / `.json`) with a guardrail-gated verdict:
+  a model only "wins" on engagement if it also refused every genuine-harm case, so engaging
+  more by complying with harmful requests is disqualifying, not rewarded.
+
 ## 0.3.0
 - Extension categorized under AI on the Marketplace, alongside Testing/Machine Learning/Visualization
 - README rewritten as a full guide: the directness/safety separability thesis, an

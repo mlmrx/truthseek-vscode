@@ -216,6 +216,62 @@ async function selectTarget() {
   );
 }
 
+// Reads the base_url out of config.yaml's target block, if present, so model
+// discovery for a comparison can reuse the endpoint already configured.
+function readConfigBaseUrl() {
+  const cfgPath = configFilePath();
+  if (!cfgPath || !fs.existsSync(cfgPath)) return null;
+  const m = fs.readFileSync(cfgPath, "utf8").match(/^\s*base_url:\s*(\S+)/m);
+  return m ? m[1] : null;
+}
+
+async function compareModels() {
+  const root = harnessRoot();
+  if (!root) {
+    vscode.window.showErrorMessage("TruthSeek: open a folder or set truthseek.harnessPath first.");
+    return;
+  }
+  const baseUrl = readConfigBaseUrl();
+  let models = [];
+  if (baseUrl) {
+    vscode.window.setStatusBarMessage(`TruthSeek: looking for models at ${baseUrl}…`, 4000);
+    const discovered = await listModels(baseUrl);
+    if (discovered.length >= 2) {
+      const picked = await vscode.window.showQuickPick(discovered, {
+        canPickMany: true,
+        placeHolder: "Pick two or more models to compare (same endpoint as config.yaml)",
+      });
+      if (picked && picked.length >= 2) models = picked;
+    }
+  }
+  if (models.length < 2) {
+    const typed = await vscode.window.showInputBox({
+      prompt: "Models to compare, comma-separated (as the server expects them)",
+      placeHolder: "llama3.1:latest, deepseek-r1:8b",
+      ignoreFocusOut: true,
+    });
+    if (!typed) return;
+    models = typed.split(",").map((s) => s.trim()).filter(Boolean);
+  }
+  if (models.length < 2) {
+    vscode.window.showErrorMessage("TruthSeek: pick at least two models to compare.");
+    return;
+  }
+  const py = cfg().get("pythonBin") || "python3";
+  const term =
+    vscode.window.terminals.find((t) => t.name === "TruthSeek") ||
+    vscode.window.createTerminal({ name: "TruthSeek", cwd: root });
+  term.show(true);
+  term.sendText(
+    `${py} -m harness.cli compare --config ${cfg().get("configPath")} ` +
+    `--cases ${cfg().get("casesPath")} --models ${models.join(",")}`
+  );
+  vscode.window.setStatusBarMessage(
+    `TruthSeek: comparing ${models.length} models — see out/comparison.html when it finishes`,
+    8000
+  );
+}
+
 // ---------------------------------------------------------------- status bar
 
 function updateStatus() {
@@ -442,7 +498,8 @@ function activate(context) {
     vscode.commands.registerCommand("truthseek.openScorecard", () => openPanel(context)),
     vscode.commands.registerCommand("truthseek.newCase", newCase),
     vscode.commands.registerCommand("truthseek.refresh", refreshAll),
-    vscode.commands.registerCommand("truthseek.selectTarget", selectTarget)
+    vscode.commands.registerCommand("truthseek.selectTarget", selectTarget),
+    vscode.commands.registerCommand("truthseek.compareModels", compareModels)
   );
 
   // Refresh whenever the harness writes a new scorecard.
