@@ -1,6 +1,6 @@
 # TruthSeek Eval Harness — VS Code Extension
 
-Run [TruthSeek](https://github.com/truthseek) evals without leaving the editor.
+Run TruthSeek evals without leaving the editor.
 Edit a case, run it, and see the gate verdict in your status bar — the whole
 tuning loop, editor-native.
 

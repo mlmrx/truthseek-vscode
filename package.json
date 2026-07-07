@@ -9,6 +9,14 @@
   "categories": ["Testing", "Machine Learning", "Visualization"],
   "keywords": ["eval", "llm", "ai safety", "benchmark", "truthseek"],
   "icon": "icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mlmrx/truthseek-vscode.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mlmrx/truthseek-vscode/issues"
+  },
+  "homepage": "https://github.com/mlmrx/truthseek-vscode#readme",
   "main": "./extension.js",
   "activationEvents": ["workspaceContains:**/harness/cli.py", "workspaceContains:**/out/scorecard.json"],
   "contributes": {
