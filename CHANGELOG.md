@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.5.0
+- Harness gains two optional accuracy knobs for the `openai_compatible` judge, surfaced
+  in runs and the scorecard: `repeat` (average K judge passes to cut variance, with an
+  automatic temperature bump so the passes actually differ) and `criteria` (score each
+  sub-criterion — directness, anti-sycophancy, calibration, guardrail integrity — in its
+  own focused call and ensemble, instead of one compound judgement). Both off by default;
+  set them in `config.yaml`. No extension UI change — the sharper scores flow straight
+  into the gate badge, tree, and scorecard panel.
+
 ## 0.4.0
 - New command *TruthSeek: Compare two models…* — pick two or more models (auto-discovered
   from the endpoint in `config.yaml`) and run the same case suite against each. Produces a

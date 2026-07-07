@@ -76,6 +76,7 @@ it produces. Together, the full system currently ships with:
 | Agentic tool-use evals | Cases can give the model real tools (web search, code execution) and score whether it actually used them and reported the result faithfully — not just whether the final answer sounds plausible |
 | Cross-modal (image) evals | Attach an image to a case and verify a vision-capable model genuinely engages with it, rather than giving a generic non-answer |
 | Two judge modes | A fast offline heuristic judge for iteration, or point at a strong hosted/local model as judge for real grading |
+| Scalable LLM judging | Optional `repeat` (average K judge passes to cut variance) and `criteria` (score each sub-criterion in its own focused call and ensemble) knobs sharpen the model judge, adapted from the LLM-as-a-Verifier scaling axes |
 
 Case categories and judge behavior are documented in the harness's own README —
 open your harness repo (or set `truthseek.harnessPath`) to see the full case format
