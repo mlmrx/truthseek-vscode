@@ -1,0 +1,71 @@
+{
+  "name": "truthseek",
+  "displayName": "TruthSeek Eval Harness",
+  "description": "Run TruthSeek evals from the editor: one-click runs, a live gate badge in the status bar, pass/fail case tree, and a scorecard panel with the separability plane.",
+  "version": "0.1.0",
+  "publisher": "truthseek",
+  "license": "MIT",
+  "engines": { "vscode": "^1.85.0" },
+  "categories": ["Testing", "Machine Learning", "Visualization"],
+  "keywords": ["eval", "llm", "ai safety", "benchmark", "truthseek"],
+  "icon": "icon.png",
+  "main": "./extension.js",
+  "activationEvents": ["workspaceContains:**/harness/cli.py", "workspaceContains:**/out/scorecard.json"],
+  "contributes": {
+    "commands": [
+      { "command": "truthseek.runMock", "title": "TruthSeek: Run eval (mock, offline)" },
+      { "command": "truthseek.runConfig", "title": "TruthSeek: Run eval (config.yaml)" },
+      { "command": "truthseek.runCategory", "title": "TruthSeek: Run one category…" },
+      { "command": "truthseek.runStrict", "title": "TruthSeek: Run strict gate (CI check)" },
+      { "command": "truthseek.openScorecard", "title": "TruthSeek: Open scorecard panel" },
+      { "command": "truthseek.newCase", "title": "TruthSeek: New eval case file" },
+      { "command": "truthseek.refresh", "title": "TruthSeek: Refresh", "icon": "$(refresh)" }
+    ],
+    "configuration": {
+      "title": "TruthSeek",
+      "properties": {
+        "truthseek.harnessPath": {
+          "type": "string", "default": "",
+          "description": "Path to the TruthSeek harness repo. Leave empty to use the workspace root."
+        },
+        "truthseek.pythonBin": {
+          "type": "string", "default": "python3",
+          "description": "Python executable used to run the harness."
+        },
+        "truthseek.casesPath": {
+          "type": "string", "default": "cases/",
+          "description": "Cases directory, relative to the harness repo."
+        },
+        "truthseek.configPath": {
+          "type": "string", "default": "config.yaml",
+          "description": "Harness config file, relative to the harness repo."
+        }
+      }
+    },
+    "viewsContainers": {
+      "activitybar": [
+        { "id": "truthseek", "title": "TruthSeek", "icon": "$(shield)" }
+      ]
+    },
+    "views": {
+      "truthseek": [
+        { "id": "truthseekRuns", "name": "Scorecard", "icon": "$(shield)" }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        { "command": "truthseek.refresh", "when": "view == truthseekRuns", "group": "navigation" },
+        { "command": "truthseek.runMock", "when": "view == truthseekRuns", "group": "navigation" }
+      ]
+    },
+    "snippets": [
+      { "language": "yaml", "path": "./snippets/truthseek.code-snippets" }
+    ]
+  },
+  "scripts": {
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@vscode/vsce": "^3.0.0"
+  }
+}
