@@ -8,6 +8,10 @@ tuning loop, editor-native.
 
 - **One-click runs** — Command Palette: *Run eval (mock)*, *Run eval (config.yaml)*,
   *Run one category…*, or *Run strict gate*. Output streams in the integrated terminal.
+- **Point it at any open-source model** — *TruthSeek: Configure target model…* offers
+  presets for Ollama, LM Studio, and vLLM, auto-discovers the models currently loaded
+  at that address, and writes `config.yaml` for you. Any OpenAI-compatible endpoint
+  (local or hosted) works, including a custom one you type in.
 - **Gate badge, always visible** — the status bar shows `GATE PASS` / `GATE FAIL`
   with the two headline rates (engagement · refusal), refreshed automatically the
   moment the harness writes `out/scorecard.json`. A failed guardrail turns it red.
@@ -23,6 +27,9 @@ tuning loop, editor-native.
 1. Open your TruthSeek harness repo as the workspace (or set `truthseek.harnessPath`).
 2. Run *TruthSeek: Run eval (mock, offline)* — no keys needed.
 3. The badge, tree, and panel populate from `out/scorecard.json`.
+4. When you're ready to evaluate a real model, run *TruthSeek: Configure target model…*
+   and either pick a running local server or point it at a hosted OpenAI-compatible
+   endpoint. Then run *TruthSeek: Run eval (config.yaml)*.
 
 ## Settings
 

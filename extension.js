@@ -3,6 +3,7 @@
 const vscode = require("vscode");
 const fs = require("fs");
 const path = require("path");
+const { execFile } = require("child_process");
 
 let statusItem, treeProvider, panel, watcher;
 
@@ -24,21 +25,37 @@ function scorecardPath() {
   return root ? path.join(root, "out", "scorecard.json") : null;
 }
 
-// Tolerant normalizer — same shapes the desktop app accepts.
-function normCase(c, idx) {
+function configFilePath() {
+  const root = harnessRoot();
+  return root ? path.join(root, cfg().get("configPath") || "config.yaml") : null;
+}
+
+// Tolerant normalizer — accepts the harness's nested {case, target_output, judge}
+// shape as well as a flatter shape (fields directly on the result object).
+function normCase(r, idx) {
+  const c = r.case || r;
+  const j = r.judge && typeof r.judge === "object" ? r.judge : null;
   const expect = c.expect === "refuse" ? "refuse" : "engage";
-  const verdict = c.verdict || c.behavior || null;
+  const verdictRaw = j ? j.decision : r.verdict || r.behavior || null;
+  const verdict = verdictRaw === "engaged" ? "engage" : verdictRaw === "refused" ? "refuse" : verdictRaw;
   const pass =
-    typeof c.pass === "boolean" ? c.pass :
-    typeof c.passed === "boolean" ? c.passed :
+    j && typeof j.passed === "boolean" ? j.passed :
+    typeof r.pass === "boolean" ? r.pass :
+    typeof r.passed === "boolean" ? r.passed :
     verdict ? verdict === expect : false;
+  const prompt =
+    r.prompt ||
+    (Array.isArray(c.messages) ? c.messages.filter((m) => m.role === "user").map((m) => m.content).join(" / ") : "");
+  const judgeNote =
+    (j && Array.isArray(j.reasons) && j.reasons.join("; ")) ||
+    r.judge_note || r.rationale || (typeof r.judge === "string" ? r.judge : "") || "";
   return {
-    id: c.id || `case-${idx + 1}`,
-    category: c.category || "uncategorized",
+    id: c.id || r.id || `case-${idx + 1}`,
+    category: c.category || r.category || "uncategorized",
     expect, verdict, pass,
-    prompt: c.prompt || "",
-    judge: c.judge || c.judge_note || c.rationale || "",
-    scores: c.scores || null,
+    prompt,
+    judge: judgeNote,
+    scores: (j && j.metrics) || r.scores || null,
   };
 }
 
@@ -51,7 +68,7 @@ function loadScorecard() {
     const runs = raw.runs || [raw];
     const r = runs[runs.length - 1]; // most recent
     const cases = (r.cases || r.results || []).map(normCase);
-    return { name: r.name || "scorecard", model: r.model || "—", cases };
+    return { name: r.name || r.model || "scorecard", model: r.model || "—", cases };
   } catch (e) {
     return { error: String(e) };
   }
@@ -84,6 +101,119 @@ function runHarness(args) {
   term.show(true);
   term.sendText(`${py} -m harness.cli run ${args}`);
   vscode.window.setStatusBarMessage("TruthSeek: eval running — scorecard refreshes when out/scorecard.json updates", 6000);
+}
+
+// ---------------------------------------------------------------- target config
+
+// Best-effort model discovery — shells out to the harness, which knows how
+// to probe Ollama's native API and the OpenAI-compatible /models listing.
+function listModels(baseUrl) {
+  return new Promise((resolve) => {
+    const root = harnessRoot();
+    if (!root) return resolve([]);
+    const py = cfg().get("pythonBin") || "python3";
+    execFile(
+      py,
+      ["-m", "harness.cli", "models", "--base-url", baseUrl],
+      { cwd: root, timeout: 8000 },
+      (err, stdout) => {
+        if (err) return resolve([]);
+        try {
+          const parsed = JSON.parse(stdout.trim());
+          resolve(Array.isArray(parsed) ? parsed : []);
+        } catch {
+          resolve([]);
+        }
+      }
+    );
+  });
+}
+
+// Rewrites only the top-level `target:` block of config.yaml, leaving
+// judge/thresholds/comments untouched. Avoids pulling in a YAML dependency
+// for a file whose shape we fully control.
+function upsertTargetBlock(configPath, targetLines) {
+  const isTopLevelKey = (l) => /^[A-Za-z_][\w-]*:/.test(l);
+  let lines = fs.existsSync(configPath) ? fs.readFileSync(configPath, "utf8").split(/\r?\n/) : [];
+  const newBlock = ["target:", ...targetLines.map((l) => "  " + l)];
+  const start = lines.findIndex((l) => /^target:/.test(l));
+  if (start === -1) {
+    lines = [...newBlock, "", ...lines];
+  } else {
+    let end = start + 1;
+    while (end < lines.length && !isTopLevelKey(lines[end])) end++;
+    lines.splice(start, end - start, ...newBlock);
+  }
+  fs.writeFileSync(configPath, lines.join("\n").replace(/\n{3,}/g, "\n\n"));
+}
+
+const TARGET_PRESETS = [
+  { label: "Mock (offline, no model)", type: "mock" },
+  { label: "Ollama (local)", baseUrl: "http://localhost:11434/v1" },
+  { label: "LM Studio (local)", baseUrl: "http://localhost:1234/v1" },
+  { label: "vLLM / self-hosted (local)", baseUrl: "http://localhost:8000/v1" },
+  { label: "Custom OpenAI-compatible endpoint…", baseUrl: "" },
+];
+
+async function selectTarget() {
+  const root = harnessRoot();
+  if (!root) {
+    vscode.window.showErrorMessage("TruthSeek: open a folder or set truthseek.harnessPath first.");
+    return;
+  }
+  const pick = await vscode.window.showQuickPick(
+    TARGET_PRESETS.map((p) => p.label),
+    { placeHolder: "Which model are you pointing TruthSeek at?" }
+  );
+  if (!pick) return;
+  const preset = TARGET_PRESETS.find((p) => p.label === pick);
+  const cfgPath = configFilePath();
+
+  if (preset.type === "mock") {
+    upsertTargetBlock(cfgPath, ["type: mock"]);
+    vscode.window.showInformationMessage("TruthSeek: target set to mock (offline).");
+    return;
+  }
+
+  const baseUrl = await vscode.window.showInputBox({
+    prompt: "Base URL (OpenAI-compatible /v1 endpoint)",
+    value: preset.baseUrl,
+    ignoreFocusOut: true,
+  });
+  if (!baseUrl) return;
+
+  let apiKeyEnv;
+  if (!/localhost|127\.0\.0\.1/.test(baseUrl)) {
+    apiKeyEnv = await vscode.window.showInputBox({
+      prompt: "Env var holding the API key (leave blank if none)",
+      placeHolder: "OPENAI_API_KEY",
+      ignoreFocusOut: true,
+    });
+  }
+
+  vscode.window.setStatusBarMessage(`TruthSeek: looking for models at ${baseUrl}…`, 4000);
+  const models = await listModels(baseUrl);
+  let model;
+  if (models.length) {
+    const choice = await vscode.window.showQuickPick([...models, "Enter manually…"], {
+      placeHolder: `${models.length} model(s) found at ${baseUrl}`,
+    });
+    if (choice && choice !== "Enter manually…") model = choice;
+  }
+  if (!model) {
+    model = await vscode.window.showInputBox({
+      prompt: "Model name (as the server expects it)",
+      ignoreFocusOut: true,
+    });
+  }
+  if (!model) return;
+
+  const lines = ["type: openai_compatible", `base_url: ${baseUrl}`, `model: ${model}`];
+  if (apiKeyEnv) lines.push(`api_key_env: ${apiKeyEnv}`);
+  upsertTargetBlock(cfgPath, lines);
+  vscode.window.showInformationMessage(
+    `TruthSeek: target set to ${model} @ ${baseUrl}. Run "TruthSeek: Run eval (config.yaml)" to evaluate it.`
+  );
 }
 
 // ---------------------------------------------------------------- status bar
@@ -311,7 +441,8 @@ function activate(context) {
     }),
     vscode.commands.registerCommand("truthseek.openScorecard", () => openPanel(context)),
     vscode.commands.registerCommand("truthseek.newCase", newCase),
-    vscode.commands.registerCommand("truthseek.refresh", refreshAll)
+    vscode.commands.registerCommand("truthseek.refresh", refreshAll),
+    vscode.commands.registerCommand("truthseek.selectTarget", selectTarget)
   );
 
   // Refresh whenever the harness writes a new scorecard.
