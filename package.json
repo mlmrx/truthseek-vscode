@@ -6,7 +6,7 @@
   "publisher": "UnifyDynamics",
   "license": "MIT",
   "engines": { "vscode": "^1.85.0" },
-  "categories": ["Testing", "Machine Learning", "Visualization"],
+  "categories": ["AI", "Testing", "Machine Learning", "Visualization"],
   "keywords": ["eval", "llm", "ai safety", "benchmark", "truthseek"],
   "icon": "icon.png",
   "repository": {
