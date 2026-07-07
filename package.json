@@ -3,7 +3,7 @@
   "displayName": "TruthSeek Eval Harness",
   "description": "Run TruthSeek evals from the editor: one-click runs, a live gate badge in the status bar, pass/fail case tree, and a scorecard panel with the separability plane.",
   "version": "0.1.0",
-  "publisher": "truthseek",
+  "publisher": "UnifyDynamics",
   "license": "MIT",
   "engines": { "vscode": "^1.85.0" },
   "categories": ["Testing", "Machine Learning", "Visualization"],
