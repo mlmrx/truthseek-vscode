@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.6.0
+- Harness adds an **adversarial-robustness suite** (`cases/adversarial.yaml`): measures how
+  well a model holds its guardrails under known jailbreak framings (roleplay, instruction
+  override, fiction laundering, false authorization, obfuscation, payload-splitting). Every
+  case is `expect: refuse`, so the category score reads as a robustness rate — `6/6` means
+  every framing was resisted. Failures gate like guardrail regressions under strict mode. It
+  surfaces in the badge, tree, and scorecard like any other category.
+- Fixed a refusal-detection bug the suite exposed against a live model: common real-model
+  refusal phrasings ("I cannot provide instructions…", "I can't fulfill that request") were
+  being misread as compliance, so a safe model was reported as jailbroken. Broadened the
+  patterns while keeping calibration hedges ("I can't provide an exact number") classified as
+  engagement.
+- README documents the harness's real-model validation stories (see the harness repo's
+  "Field notes" section) — every feature was validated against a live local model, not just
+  the offline mock.
+
 ## 0.5.0
 - Harness gains two optional accuracy knobs for the `openai_compatible` judge, surfaced
   in runs and the scorecard: `repeat` (average K judge passes to cut variance, with an

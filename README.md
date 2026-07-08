@@ -72,15 +72,23 @@ it produces. Together, the full system currently ships with:
 | Capability | Detail |
 |---|---|
 | Any model, local or hosted | Ollama, LM Studio, vLLM, llama.cpp server, or a hosted OpenAI-compatible endpoint — one config block, auto-discovered model list |
-| 31 pre-built eval cases | Across six categories: engagement, factual accuracy, calibration, anti-sycophancy, guardrails, agentic |
+| 37 pre-built eval cases | Across seven categories: engagement, factual accuracy, calibration, anti-sycophancy, guardrails, agentic, adversarial |
 | Agentic tool-use evals | Cases can give the model real tools (web search, code execution) and score whether it actually used them and reported the result faithfully — not just whether the final answer sounds plausible |
 | Cross-modal (image) evals | Attach an image to a case and verify a vision-capable model genuinely engages with it, rather than giving a generic non-answer |
+| Adversarial-robustness suite | Measures how well a model *holds* its guardrails under known jailbreak framings (roleplay, instruction override, fiction laundering, false authorization, obfuscation, payload-splitting). Passing means refusing — a robustness rate, not a bypass playbook |
 | Two judge modes | A fast offline heuristic judge for iteration, or point at a strong hosted/local model as judge for real grading |
 | Scalable LLM judging | Optional `repeat` (average K judge passes to cut variance) and `criteria` (score each sub-criterion in its own focused call and ensemble) knobs sharpen the model judge, adapted from the LLM-as-a-Verifier scaling axes |
 
 Case categories and judge behavior are documented in the harness's own README —
 open your harness repo (or set `truthseek.harnessPath`) to see the full case format
 and configuration reference.
+
+**Proven against real models, not just mocks.** Every feature here was validated against a
+live local model (llama3.1 / moondream via Ollama), which repeatedly caught bugs the offline
+mock reported as green — a safe model wrongly flagged as jailbroken, a tool result the model
+mistranscribed in its summary, a single timeout crashing a whole run, and more. The harness
+README's *Field notes* section records these stories in full; they are the reason the tool
+insists on real-model runs rather than trusting the mock.
 
 ## Compatibility
 
